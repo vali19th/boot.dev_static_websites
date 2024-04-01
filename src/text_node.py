@@ -1,4 +1,15 @@
+from enum import Enum
+
 from html_node import LeafNode
+
+
+class TT(Enum):
+    TEXT = "text"
+    BOLD = "bold"
+    ITALIC = "italic"
+    CODE = "code"
+    LINK = "link"
+    IMAGE = "image"
 
 
 class TextNode:
@@ -16,20 +27,23 @@ class TextNode:
     def to_html_node(self):
         text_type = self.text_type
 
-        if text_type == "text":
+        if text_type == TT.TEXT:
             return LeafNode(None, self.text)
-        elif text_type == "bold":
+        elif text_type == TT.BOLD:
             return LeafNode("b", self.text)
-        elif text_type == "italic":
+        elif text_type == TT.ITALIC:
             return LeafNode("i", self.text)
-        elif text_type == "code":
+        elif text_type == TT.CODE:
             return LeafNode("i", self.text)
-        elif text_type == "link":
+        elif text_type == TT.LINK:
             return LeafNode("a", self.text, {"href": self.url})
-        elif text_type == "image":
+        elif text_type == TT.IMAGE:
             return LeafNode(
                 "img", "", {"src": self.url, "alt": self.text}, self_closing=True
             )
         else:
             raise ValueError(f"Unknown text type: {text_type}")
+
+
+# def split_nodes_delimiter(old_nodes, delimiter, text_type):
 

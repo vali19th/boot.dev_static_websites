@@ -18,6 +18,9 @@ class HTMLNode:
         args = f"{self.tag!r}, {self.value!r}, {self.children!r}, {self.props!r}, {self.self_closing}"
         return f"{self.__class__.__name__}({args})"
 
+    def __eq__(self, other):
+        return self.__repr__() == other.__repr__()
+
     def to_html(self):
         raise NotImplementedError
 
@@ -51,7 +54,6 @@ class LeafNode(HTMLNode):
 
 class ParentNode(HTMLNode):
     def __init__(self, tag, children, props=None):
-        print(tag, children, props)
         if not tag:
             raise ValueError("Parent nodes must have a tag")
 

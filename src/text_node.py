@@ -133,7 +133,7 @@ def split_nodes_image(old_nodes):
     return new_nodes
 
 
-def text_to_text_nodes(markdown):
+def markdown_to_text_nodes(markdown):
     nodes = [TextNode(markdown, TT.TEXT)]
     nodes = split_nodes_delimiter(nodes, "**", TT.BOLD)
     nodes = split_nodes_delimiter(nodes, "*", TT.ITALIC)

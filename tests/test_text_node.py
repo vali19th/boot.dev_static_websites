@@ -7,7 +7,7 @@ from src.text_node import (
     split_nodes_delimiter,
     split_nodes_image,
     split_nodes_link,
-    text_to_text_nodes,
+    markdown_to_text_nodes,
 )
 
 
@@ -59,16 +59,16 @@ def test_md_to_text_node():
 
 
 def test_extract_markdown_images():
-    text = "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png) and ![another](https://i.imgur.com/dfsdkjfd.png)"
-    assert extract_markdown_images(text) == [
+    markdown = "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png) and ![another](https://i.imgur.com/dfsdkjfd.png)"
+    assert extract_markdown_images(markdown) == [
         ("image", "https://i.imgur.com/zjjcJKZ.png"),
         ("another", "https://i.imgur.com/dfsdkjfd.png"),
     ]
 
 
 def test_extract_markdown_links():
-    text = "This is text with a [link](https://www.example.com) and [another](https://www.example.com/another)"
-    assert extract_markdown_links(text) == [
+    markdown = "This is text with a [link](https://www.example.com) and [another](https://www.example.com/another)"
+    assert extract_markdown_links(markdown) == [
         ("link", "https://www.example.com"),
         ("another", "https://www.example.com/another"),
     ]
@@ -105,8 +105,8 @@ def test_split_nodes_link():
 
 
 def test_text_to_text_nodes():
-    text = "This is **text** with an *italic* word and a `code block` and an ![image](https://i.imgur.com/zjjcJKZ.png) and a [link](https://boot.dev)"
-    assert text_to_text_nodes(text) == [
+    markdown = "This is **text** with an *italic* word and a `code block` and an ![image](https://i.imgur.com/zjjcJKZ.png) and a [link](https://boot.dev)"
+    assert markdown_to_text_nodes(markdown) == [
         TextNode("This is ", TT.TEXT),
         TextNode("text", TT.BOLD),
         TextNode(" with an ", TT.TEXT),
@@ -118,4 +118,16 @@ def test_text_to_text_nodes():
         TextNode(" and a ", TT.TEXT),
         TextNode("link", TT.LINK, "https://boot.dev"),
     ]
+
+
+def test_markdown_to_blocks():
+    markdown = """
+        This is **bolded** paragraph
+
+        This is another paragraph with *italic* text and `code` here
+        This is the same paragraph on a new line
+
+        * This is a list
+        * with items
+    """
 

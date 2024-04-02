@@ -1,13 +1,23 @@
+import textwrap
+
 from pprint import pprint
+
+import pytest
+
+from src.html_node import ParentNode, LeafNode
 from src.text_node import (
-    TextNode,
-    TT,
+    block_to_block_type,
     extract_markdown_images,
     extract_markdown_links,
+    markdown_to_blocks,
+    markdown_to_html_node,
+    markdown_to_text_nodes,
     split_nodes_delimiter,
     split_nodes_image,
     split_nodes_link,
-    markdown_to_text_nodes,
+    TextNode,
+    BT,
+    TT,
 )
 
 
@@ -121,13 +131,175 @@ def test_text_to_text_nodes():
 
 
 def test_markdown_to_blocks():
+    # leave the empty lines in. We must test that we do not create empty blocks
     markdown = """
         This is **bolded** paragraph
 
         This is another paragraph with *italic* text and `code` here
         This is the same paragraph on a new line
 
+
+
+
         * This is a list
         * with items
     """
+
+    b1 = "This is **bolded** paragraph"
+    b2 = """
+        This is another paragraph with *italic* text and `code` here
+        This is the same paragraph on a new line
+    """
+    b3 = """
+        * This is a list
+        * with items
+    """
+
+    blocks = [b1, b2, b3]
+    blocks = [textwrap.dedent(b).strip() for b in blocks]
+    assert markdown_to_blocks(markdown) == blocks
+
+
+@pytest.mark.parametrize(
+    "md, block_type",
+    [
+        ("```print('Hello, World!')\n```", BT.CODE),
+        ("# h1", BT.HEADING),
+        ("###### h6", BT.HEADING),
+        ("> This is a blockquote\n> with multiple lines", BT.QUOTE),
+        ("* milk\n* eggs", BT.UNORDERED_LIST),
+        ("- milk\n- eggs", BT.UNORDERED_LIST),
+        ("1. milk\n2. eggs", BT.ORDERED_LIST),
+        ("This is a paragraph.", BT.PARAGRAPH),
+    ],
+)
+def test_block_to_block_type(md, block_type):
+    block = markdown_to_blocks(md)[0]
+    assert block_to_block_type(block) == block_type
+
+
+def test_markdown_to_html_node():
+    markdown = """
+        ```
+        print('Hello, World!')
+        ```
+
+        # heading 1
+
+        ## heading 2
+
+        ### heading 3
+
+        #### heading 4
+
+        ##### heading 5
+
+        ###### heading 6
+
+        > This is a blockquote
+        > with multiple lines
+
+        * milk
+        * eggs
+
+        - milk
+        - eggs
+
+        1. milk
+        2. eggs
+
+        This is an **awesome** paragraph.
+    """
+
+    markdown = """
+        ```
+        print('Hello, World!')
+        ```
+
+        # heading 1
+
+        ## heading 2
+
+        ### heading 3
+
+        #### heading 4
+
+        ##### heading 5
+
+        ###### heading 6
+
+        * milk
+        * eggs
+
+        - milk
+        - eggs
+
+        1. milk
+        2. eggs
+    """
+
+    expected = ParentNode(
+        "div",
+        [
+            ParentNode("pre", [LeafNode(None, "print('Hello, World!')")]),
+            ParentNode("h1", [LeafNode(None, "heading 1")]),
+            ParentNode("h2", [LeafNode(None, "heading 2")]),
+            ParentNode("h3", [LeafNode(None, "heading 3")]),
+            ParentNode("h4", [LeafNode(None, "heading 4")]),
+            ParentNode("h5", [LeafNode(None, "heading 5")]),
+            ParentNode("h6", [LeafNode(None, "heading 6")]),
+            #     ParentNode(
+            #         "blockquote",
+            #         [
+            #             LeafNode(None, "This is a blockquote"),
+            #             LeafNode(None, "with multiple lines"),
+            #         ],
+            #     ),
+            ParentNode(
+                "ul",
+                [
+                    ParentNode("li", [LeafNode(None, "milk")]),
+                    ParentNode("li", [LeafNode(None, "eggs")]),
+                ],
+            ),
+            ParentNode(
+                "ul",
+                [
+                    ParentNode("li", [LeafNode(None, "milk")]),
+                    ParentNode("li", [LeafNode(None, "eggs")]),
+                ],
+            ),
+            ParentNode(
+                "ol",
+                [
+                    ParentNode("li", [LeafNode(None, "milk")]),
+                    ParentNode("li", [LeafNode(None, "eggs")]),
+                ],
+            ),
+            #     ParentNode(
+            #         "p",
+            #         [
+            #             LeafNode(None, "This is an "),
+            #             LeafNode("bold", "**awesome**"),
+            #             LeafNode(None, " paragraph."),
+            #         ],
+            #     ),
+        ],
+    )
+
+    actual = markdown_to_html_node(markdown)
+    print("ACTUAL", actual)
+    actual = actual.to_html()
+    expected = expected.to_html()
+
+    print("\n\n")
+    print("--------- START")
+    print("markdown", repr(markdown))
+    print("actual  ", repr(actual))
+    print("expected", repr(expected))
+    print("eq", actual == expected)
+    print("eq", repr(actual) == repr(expected))
+    print("--------- END")
+
+    assert actual == expected
 

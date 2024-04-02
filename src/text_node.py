@@ -1,8 +1,10 @@
 import re
+import textwrap
 
 from enum import Enum
+from pprint import pprint
 
-from html_node import LeafNode
+from html_node import ParentNode, LeafNode
 
 
 class TT(Enum):
@@ -12,6 +14,15 @@ class TT(Enum):
     CODE = "code"
     LINK = "link"
     IMAGE = "image"
+
+
+class BT(Enum):
+    PARAGRAPH = "p"
+    HEADING = "heading"
+    CODE = "pre"
+    QUOTE = "blockquote"
+    UNORDERED_LIST = "ul"
+    ORDERED_LIST = "ol"
 
 
 class TextNode:
@@ -24,7 +35,8 @@ class TextNode:
         return self.__repr__() == other.__repr__()
 
     def __repr__(self):
-        return f"TextNode({self.markdown}, {self.text_type}, {self.url})"
+        args = f"{self.markdown!r}, {self.text_type!r}, {self.url!r}"
+        return f"{self.__class__.__name__}({args})"
 
     def to_html_node(self):
         text_type = self.text_type
@@ -144,5 +156,91 @@ def markdown_to_text_nodes(markdown):
 
 
 def markdown_to_blocks(markdown):
+    blocks = markdown.split("\n\n")
+    return [textwrap.dedent(b).strip() for b in blocks if b]
+
+
+def block_to_block_type(block):
+    if block.startswith("#"):
+        return BT.HEADING
+    elif block.startswith("```") and block.endswith("```"):
+        return BT.CODE
+    elif block.startswith(">"):
+        return BT.QUOTE
+    elif block.startswith(("- ", "* ")):
+        return BT.UNORDERED_LIST
+    elif re.search(r"^\d+\.", block):
+        return BT.ORDERED_LIST
+    else:
+        return BT.PARAGRAPH
+
+
+def markdown_to_html_node(markdown):
+    """
+    Quote blocks should be surrounded by a <blockquote> tag.
+    Unordered list blocks should be surrounded by a <ul> tag, and each list item should be surrounded by a <li> tag.
+    Code blocks should be surrounded by a <code> tag nested inside a <pre> tag.
+    Paragraphs should be surrounded by a <p> tag.
+    """
+
+    block_nodes = []
+    for b in markdown_to_blocks(markdown):
+        b_type = block_to_block_type(b)
+
+        # fmt: off
+        if   b_type == BT.PARAGRAPH:      node = block_to_html_p(b)
+        elif b_type == BT.HEADING:        node = block_to_html_heading(b)
+        elif b_type == BT.CODE:           node = block_to_html_pre(b)
+        elif b_type == BT.QUOTE:          node = block_to_html_blockquote(b)
+        elif b_type == BT.UNORDERED_LIST: node = block_to_html_ul(b)
+        elif b_type == BT.ORDERED_LIST:   node = block_to_html_ol(b)
+        # fmt: on
+
+        print("\n\n")
+        print("b", repr(b))
+        print("b_type", repr(b_type))
+        print("node", repr(node))
+        block_nodes.append(node)
+        x = [...]
+
+    return ParentNode("div", block_nodes)
+
+
+def block_to_html_p(block):
     return
+
+
+def block_to_html_heading(block):
+    n = block.count("#")
+    children = block.strip("#").strip()
+    children = markdown_to_text_nodes(children)
+    children = [c.to_html_node() for c in children]
+    return ParentNode(f"h{n}", children)
+
+
+def block_to_html_pre(block):
+    block = block.strip("```").strip()
+    return ParentNode("pre", [LeafNode(None, block)])
+
+
+def block_to_html_blockquote(block):
+    return
+
+
+def block_to_html_ul(block):
+    children = []
+    for item in block.split("\n"):
+        item = re.sub(r"^[-*] ", "", item)
+        children.append(ParentNode("li", [LeafNode(None, item)]))
+
+    return ParentNode("ul", children)
+
+
+def block_to_html_ol(block):
+    children = []
+    for item in block.split("\n"):
+        item = re.sub(r"^\d+\. ", "", item)
+        children.append(ParentNode("li", [LeafNode(None, item)]))
+
+    return ParentNode("ol", children)
 

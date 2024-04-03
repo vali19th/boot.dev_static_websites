@@ -8,16 +8,21 @@ from text_node import markdown_to_html_node
 
 def main():
     copy_dir("static", "public")
+    generate_pages_recursive("content", "content/template.html", "public")
 
-    src = "content/index.md"
-    template = "src/template.html"
-    dest = "public/index.html"
-    generate_page(src, template, dest)
+
+def generate_pages_recursive(src_dir, template_path, dest_dir):
+    for p in Path(src_dir).iterdir():
+        dest_name = Path(dest_dir).joinpath(p.name)
+        if p.is_dir():
+            generate_pages_recursive(p, template_path, dest_name)
+        elif p.is_file() and p.suffix == ".md":
+            generate_page(p, template_path, dest_name.with_suffix(".html"))
 
 
 def generate_page(src_path, template_path, dest_path):
     print(
-        f"\n[INFO] Generating page from {src_path!r} -> {dest_path!r} using {template_path!r}"
+        f"[INFO] Generating page from {str(src_path)!r} -> {str(dest_path)!r} using {str(template_path)!r}"
     )
 
     src_path = Path(src_path)

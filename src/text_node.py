@@ -2,7 +2,6 @@ import re
 import textwrap
 
 from enum import Enum
-from pprint import pprint
 
 from html_node import ParentNode, LeafNode
 
@@ -157,7 +156,8 @@ def markdown_to_text_nodes(markdown):
 
 def markdown_to_blocks(markdown):
     blocks = markdown.split("\n\n")
-    return [textwrap.dedent(b).strip() for b in blocks if b]
+    blocks = (textwrap.dedent(b).strip() for b in blocks)
+    return [b for b in blocks if b]
 
 
 def block_to_block_type(block):
@@ -196,10 +196,6 @@ def markdown_to_html_node(markdown):
         elif b_type == BT.ORDERED_LIST:   node = block_to_html_ol(b)
         # fmt: on
 
-        print("\n\n")
-        print("b", repr(b))
-        print("b_type", repr(b_type))
-        print("node", repr(node))
         block_nodes.append(node)
         x = [...]
 
@@ -207,7 +203,9 @@ def markdown_to_html_node(markdown):
 
 
 def block_to_html_p(block):
-    return
+    nodes = markdown_to_text_nodes(block)
+    nodes = [n.to_html_node() for n in nodes]
+    return ParentNode("p", nodes)
 
 
 def block_to_html_heading(block):
@@ -224,23 +222,30 @@ def block_to_html_pre(block):
 
 
 def block_to_html_blockquote(block):
-    return
+    block = (b.lstrip("> ") for b in block.split("\n"))
+    children = markdown_to_text_nodes("\n".join(block))
+    children = [c.to_html_node() for c in children]
+    return ParentNode("blockquote", children)
 
 
 def block_to_html_ul(block):
-    children = []
+    ul_children = []
     for item in block.split("\n"):
         item = re.sub(r"^[-*] ", "", item)
-        children.append(ParentNode("li", [LeafNode(None, item)]))
+        item_children = markdown_to_text_nodes(item)
+        item_children = [c.to_html_node() for c in item_children]
+        ul_children.append(ParentNode("li", item_children))
 
-    return ParentNode("ul", children)
+    return ParentNode("ul", ul_children)
 
 
 def block_to_html_ol(block):
-    children = []
+    ul_children = []
     for item in block.split("\n"):
         item = re.sub(r"^\d+\. ", "", item)
-        children.append(ParentNode("li", [LeafNode(None, item)]))
+        item_children = markdown_to_text_nodes(item)
+        item_children = [c.to_html_node() for c in item_children]
+        ul_children.append(ParentNode("li", item_children))
 
-    return ParentNode("ol", children)
+    return ParentNode("ol", ul_children)
 

@@ -1,7 +1,5 @@
 import textwrap
 
-from pprint import pprint
-
 import pytest
 
 from src.html_node import ParentNode, LeafNode
@@ -89,7 +87,6 @@ def test_split_nodes_image():
         "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png) and another ![second image](https://i.imgur.com/3elNhQu.png).",
         TT.TEXT,
     )
-    pprint(split_nodes_image([node]))
     assert split_nodes_image([node]) == [
         TextNode("This is text with an ", TT.TEXT),
         TextNode("image", TT.IMAGE, "https://i.imgur.com/zjjcJKZ.png"),
@@ -104,7 +101,6 @@ def test_split_nodes_link():
         "This is text with an [link](https://x.com/) and another [second link](https://youtube.com/).",
         TT.TEXT,
     )
-    pprint(split_nodes_link([node]))
     assert split_nodes_link([node]) == [
         TextNode("This is text with an ", TT.TEXT),
         TextNode("link", TT.LINK, "https://x.com/"),
@@ -211,33 +207,6 @@ def test_markdown_to_html_node():
         This is an **awesome** paragraph.
     """
 
-    markdown = """
-        ```
-        print('Hello, World!')
-        ```
-
-        # heading 1
-
-        ## heading 2
-
-        ### heading 3
-
-        #### heading 4
-
-        ##### heading 5
-
-        ###### heading 6
-
-        * milk
-        * eggs
-
-        - milk
-        - eggs
-
-        1. milk
-        2. eggs
-    """
-
     expected = ParentNode(
         "div",
         [
@@ -248,13 +217,10 @@ def test_markdown_to_html_node():
             ParentNode("h4", [LeafNode(None, "heading 4")]),
             ParentNode("h5", [LeafNode(None, "heading 5")]),
             ParentNode("h6", [LeafNode(None, "heading 6")]),
-            #     ParentNode(
-            #         "blockquote",
-            #         [
-            #             LeafNode(None, "This is a blockquote"),
-            #             LeafNode(None, "with multiple lines"),
-            #         ],
-            #     ),
+            ParentNode(
+                "blockquote",
+                [LeafNode(None, "This is a blockquote\nwith multiple lines")],
+            ),
             ParentNode(
                 "ul",
                 [
@@ -276,30 +242,18 @@ def test_markdown_to_html_node():
                     ParentNode("li", [LeafNode(None, "eggs")]),
                 ],
             ),
-            #     ParentNode(
-            #         "p",
-            #         [
-            #             LeafNode(None, "This is an "),
-            #             LeafNode("bold", "**awesome**"),
-            #             LeafNode(None, " paragraph."),
-            #         ],
-            #     ),
+            ParentNode(
+                "p",
+                [
+                    LeafNode(None, "This is an "),
+                    LeafNode("b", "awesome"),
+                    LeafNode(None, " paragraph."),
+                ],
+            ),
         ],
     )
 
     actual = markdown_to_html_node(markdown)
-    print("ACTUAL", actual)
-    actual = actual.to_html()
-    expected = expected.to_html()
-
-    print("\n\n")
-    print("--------- START")
-    print("markdown", repr(markdown))
-    print("actual  ", repr(actual))
-    print("expected", repr(expected))
-    print("eq", actual == expected)
-    print("eq", repr(actual) == repr(expected))
-    print("--------- END")
-
+    assert actual.to_html() == expected.to_html()
     assert actual == expected
 

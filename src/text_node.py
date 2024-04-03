@@ -176,13 +176,6 @@ def block_to_block_type(block):
 
 
 def markdown_to_html_node(markdown):
-    """
-    Quote blocks should be surrounded by a <blockquote> tag.
-    Unordered list blocks should be surrounded by a <ul> tag, and each list item should be surrounded by a <li> tag.
-    Code blocks should be surrounded by a <code> tag nested inside a <pre> tag.
-    Paragraphs should be surrounded by a <p> tag.
-    """
-
     block_nodes = []
     for b in markdown_to_blocks(markdown):
         b_type = block_to_block_type(b)
@@ -197,7 +190,6 @@ def markdown_to_html_node(markdown):
         # fmt: on
 
         block_nodes.append(node)
-        x = [...]
 
     return ParentNode("div", block_nodes)
 

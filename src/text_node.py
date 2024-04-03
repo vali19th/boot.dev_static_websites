@@ -151,7 +151,8 @@ def markdown_to_text_nodes(markdown):
     nodes = split_nodes_delimiter(nodes, "`", TT.CODE)
     nodes = split_nodes_image(nodes)
     nodes = split_nodes_link(nodes)
-    return nodes
+
+    return [n for n in nodes if n.markdown]
 
 
 def markdown_to_blocks(markdown):
@@ -180,14 +181,18 @@ def markdown_to_html_node(markdown):
     for b in markdown_to_blocks(markdown):
         b_type = block_to_block_type(b)
 
-        # fmt: off
-        if   b_type == BT.PARAGRAPH:      node = block_to_html_p(b)
-        elif b_type == BT.HEADING:        node = block_to_html_heading(b)
-        elif b_type == BT.CODE:           node = block_to_html_pre(b)
-        elif b_type == BT.QUOTE:          node = block_to_html_blockquote(b)
-        elif b_type == BT.UNORDERED_LIST: node = block_to_html_ul(b)
-        elif b_type == BT.ORDERED_LIST:   node = block_to_html_ol(b)
-        # fmt: on
+        try:
+            # fmt: off
+            if   b_type == BT.PARAGRAPH:      node = block_to_html_p(b)
+            elif b_type == BT.HEADING:        node = block_to_html_heading(b)
+            elif b_type == BT.CODE:           node = block_to_html_pre(b)
+            elif b_type == BT.QUOTE:          node = block_to_html_blockquote(b)
+            elif b_type == BT.UNORDERED_LIST: node = block_to_html_ul(b)
+            elif b_type == BT.ORDERED_LIST:   node = block_to_html_ol(b)
+            # fmt: on
+        except:
+            print(f"Error processing block: {b!r}")
+            raise
 
         block_nodes.append(node)
 
@@ -201,10 +206,11 @@ def block_to_html_p(block):
 
 
 def block_to_html_heading(block):
-    n = block.count("#")
-    children = block.strip("#").strip()
+    children = re.sub(r"^#{1,6} ", "", block)
     children = markdown_to_text_nodes(children)
     children = [c.to_html_node() for c in children]
+
+    n = min(block.count("#"), 6)
     return ParentNode(f"h{n}", children)
 
 
